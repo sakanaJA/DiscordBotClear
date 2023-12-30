@@ -1,26 +1,44 @@
-const Discord = require('discord.js');
-const client = new Discord.Client();
+const { Client, Intents, Permissions, MessageEmbed, Collection } = require('discord.js');
+const { readdirSync } = require('fs');
 
-
-client.on('ready', () => {
-    console.log(`Logged in as ${client.user.tag}!`);
+// Discordクライアントの設定
+const client = new Client({
+    intents: [
+        Intents.FLAGS.GUILDS,
+        Intents.FLAGS.GUILD_MEMBERS,
+        Intents.FLAGS.GUILD_MESSAGES,
+        Intents.FLAGS.GUILD_VOICE_STATES
+    ],
+    disableMentions: 'everyone',
 });
 
-client.on('message', async message => {
-    // コマンドが "!clear" で、メッセージを送ったユーザーが管理者である場合に動作
-    if (message.content === '!clear' && message.member.hasPermission('ADMINISTRATOR')) {
+// コンフィグファイルの読み込み
+client.config = require('./config');
+
+// コマンドの読み込み
+client.commands = new Collection();
+readdirSync('./commands/').forEach(dirs => {
+    const commands = readdirSync(`./commands/${dirs}`).filter(files => files.endsWith('.js'));
+    for (const file of commands) {
+        const command = require(`./commands/${dirs}/${file}`);
+        client.commands.set(command.name.toLowerCase(), command);
+    };
+});
+
+// メッセージ削除機能
+client.on('messageCreate', async message => {
+    if (message.content === '!clear' && message.member.permissions.has(Permissions.FLAGS.ADMINISTRATOR)) {
         try {
-            // チャンネル内のメッセージを全て取得
-            let fetched = await message.channel.messages.fetch({limit: 100});
-            // メッセージを削除
-            message.channel.bulkDelete(fetched);
+            let fetched = await message.channel.messages.fetch({ limit: 100 });
+            await message.channel.bulkDelete(fetched);
             console.log('Messages deleted');
+           message.channel.send('メッセージがすべて削除されました。');
         } catch (error) {
             console.error('Error in message deletion: ', error);
+            message.channel.send('メッセージの削除中にエラーが発生しました。');
         }
     }
 });
 
+// ボットのログイン
 client.login(process.env.TOKEN);
-
-
