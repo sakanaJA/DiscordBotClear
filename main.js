@@ -32,7 +32,7 @@ client.on('messageCreate', async message => {
             let fetched = await message.channel.messages.fetch({ limit: 100 });
             await message.channel.bulkDelete(fetched);
             console.log('Messages deleted');
-           message.channel.send('メッセージがすべて削除されました。');
+message.channel.send('All messages have been deleted.\nメッセージがすべて削除されました。');
         } catch (error) {
             console.error('Error in message deletion: ', error);
             message.channel.send('メッセージの削除中にエラーが発生しました。');
